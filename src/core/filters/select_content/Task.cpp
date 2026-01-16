@@ -35,11 +35,103 @@
 #include "PhysSizeCalc.h"
 #include "CommandLine.h"
 #include "filters/page_layout/Task.h"
+#include <QByteArray>
+#include <QCryptographicHash>
+#include <QFile>
+#include <QHash>
+#include <QMutex>
+#include <QMutexLocker>
 #include <QObject>
 #include <QTransform>
 #include <QDebug>
 
 #include <iostream>
+
+namespace
+{
+
+void writeJsonEscaped(std::ostream& os, QString const& value)
+{
+    QByteArray const utf8(value.toUtf8());
+    for (char ch : utf8) {
+        switch (ch) {
+        case '\\':
+            os << "\\\\";
+            break;
+        case '"':
+            os << "\\\"";
+            break;
+        case '\b':
+            os << "\\b";
+            break;
+        case '\f':
+            os << "\\f";
+            break;
+        case '\n':
+            os << "\\n";
+            break;
+        case '\r':
+            os << "\\r";
+            break;
+        case '\t':
+            os << "\\t";
+            break;
+        default: {
+            unsigned char const uch = static_cast<unsigned char>(ch);
+            if (uch < 0x20) {
+                static char const kHex[] = "0123456789ABCDEF";
+                os << "\\u00" << kHex[(uch >> 4) & 0xF] << kHex[uch & 0xF];
+            } else {
+                os << ch;
+            }
+            break;
+        }
+        }
+    }
+}
+
+QString computeFileHash(QString const& path)
+{
+    if (path.isEmpty()) {
+        return QString();
+    }
+
+    QFile file(path);
+    if (!file.open(QIODevice::ReadOnly)) {
+        return QString();
+    }
+
+    QCryptographicHash hash(QCryptographicHash::Sha256);
+    if (!hash.addData(&file)) {
+        return QString();
+    }
+
+    return QString::fromLatin1(hash.result().toHex());
+}
+
+QString cachedFileHash(QString const& path)
+{
+    static QMutex s_mutex;
+    static QHash<QString, QString> s_cache;
+
+    {
+        QMutexLocker locker(&s_mutex);
+        QHash<QString, QString>::const_iterator it = s_cache.constFind(path);
+        if (it != s_cache.constEnd()) {
+            return *it;
+        }
+    }
+
+    QString const hash = computeFileHash(path);
+    if (!hash.isEmpty()) {
+        QMutexLocker locker(&s_mutex);
+        s_cache.insert(path, hash);
+    }
+
+    return hash;
+}
+
+} // namespace
 
 namespace select_content
 {
@@ -164,8 +256,28 @@ Task::process(TaskStatus const& status, FilterData const& data)
 
     if (CommandLine::get().isDumpContentRect()) {
         QRectF const& content_rect = new_params.contentRect();
-        std::cout << "{\"x\":" << content_rect.x() << ",\"y\":" << content_rect.y()
-                  << ",\"w\":" << content_rect.width() << ",\"h\":" << content_rect.height()
+        ImageId const& image_id = m_pageId.imageId();
+        QString const file_hash = cachedFileHash(image_id.filePath());
+        int page_num = image_id.page();
+        if (page_num <= 0) {
+            page_num = 1;
+        }
+        std::cout << "{\"file\":\"";
+        writeJsonEscaped(std::cout, image_id.filePath());
+        std::cout << "\",\"file_hash\":";
+        if (file_hash.isEmpty()) {
+            std::cout << "null";
+        } else {
+            std::cout << "\"";
+            writeJsonEscaped(std::cout, file_hash);
+            std::cout << "\"";
+        }
+        std::cout << ",\"page\":" << page_num << ",\"subpage\":\"";
+        writeJsonEscaped(std::cout, m_pageId.subPageAsString());
+        std::cout << "\",\"x\":" << content_rect.x()
+                  << ",\"y\":" << content_rect.y()
+                  << ",\"w\":" << content_rect.width()
+                  << ",\"h\":" << content_rect.height()
                   << "}\n";
     }
 
