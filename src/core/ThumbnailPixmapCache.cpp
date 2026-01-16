@@ -352,8 +352,9 @@ ThumbnailPixmapCache::Impl::Impl(
     // that is $OUT/cache doesn't exist. We want that behaviour,
     // as otherwise when loading a project from a different machine,
     // a whole bunch of bogus directories would be created.
-    QDir().mkdir(m_thumbDir);
-
+    if (!m_thumbDir.isNull() && !m_thumbDir.isEmpty()) {
+        QDir().mkdir(m_thumbDir);
+	}
     m_backgroundLoader.moveToThread(this);
 }
 
