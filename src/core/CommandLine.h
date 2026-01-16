@@ -127,6 +127,10 @@ public:
     {
         return contains("enable-auto-margins");
     }
+    bool isDumpContentRect() const
+    {
+        return contains("dump-content-rect");
+    }
 
     bool hasMargins(QString base = "margins") const;
     bool hasPageBorders() const

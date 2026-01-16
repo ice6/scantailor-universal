@@ -124,6 +124,7 @@ CommandLine::parseCli(QStringList const& argv)
     opts << "disable-check-output";
     opts << "default-output-dpi";
     opts << "default-color-mode";
+    opts << "dump-content-rect";
     opts << "tiff-force-rgb";
     opts << "tiff-force-grayscale";
     opts << "tiff-force-keep-color-space";
@@ -365,6 +366,7 @@ CommandLine::printHelp()
     std::cout << "\t--content-box=<<left_offset>x<top_offset>:<width>x<height>>" << std::endl;
     std::cout << "\t\t\t\t\t\t-- if set the content detection is se to manual mode" << std::endl;
     std::cout << "\t\t\t\t\t\t   example: --content-box=100x100:1500x2500" << std::endl;
+    std::cout << "\t--dump-content-rect\t\t\t-- print content box as JSON per page to stdout" << std::endl;
     std::cout << "\t--enable-auto-margins\t\t\t-- sets the margins to original ones (based on detected page or image size)" << std::endl;
     std::cout << "\t--margins=<number>\t\t\t-- sets left, top, right and bottom margins to same number." << std::endl;
     std::cout << "\t\t--margins-left=<number>" << std::endl;

@@ -33,6 +33,7 @@
 #include "OrthogonalRotation.h"
 #include "ImageTransformation.h"
 #include "PhysSizeCalc.h"
+#include "CommandLine.h"
 #include "filters/page_layout/Task.h"
 #include <QObject>
 #include <QTransform>
@@ -159,6 +160,13 @@ Task::process(TaskStatus const& status, FilterData const& data)
             new_params.setPageRect(page_rect);
             new_params.setContentRect(content_rect);
         }
+    }
+
+    if (CommandLine::get().isDumpContentRect()) {
+        QRectF const& content_rect = new_params.contentRect();
+        std::cout << "{\"x\":" << content_rect.x() << ",\"y\":" << content_rect.y()
+                  << ",\"w\":" << content_rect.width() << ",\"h\":" << content_rect.height()
+                  << "}\n";
     }
 
     ui_data.setContentRect(new_params.contentRect());
