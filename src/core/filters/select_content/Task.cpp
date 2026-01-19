@@ -262,6 +262,7 @@ Task::process(TaskStatus const& status, FilterData const& data)
         if (page_num <= 0) {
             page_num = 1;
         }
+        QSize const orig_size = data.origImage().size();
         std::cout << "{\"file\":\"";
         writeJsonEscaped(std::cout, image_id.filePath());
         std::cout << "\",\"file_hash\":";
@@ -274,7 +275,9 @@ Task::process(TaskStatus const& status, FilterData const& data)
         }
         std::cout << ",\"page\":" << page_num << ",\"subpage\":\"";
         writeJsonEscaped(std::cout, m_pageId.subPageAsString());
-        std::cout << "\",\"x\":" << content_rect.x()
+        std::cout << "\",\"original_width\":" << orig_size.width()
+                  << ",\"original_height\":" << orig_size.height()
+                  << ",\"x\":" << content_rect.x()
                   << ",\"y\":" << content_rect.y()
                   << ",\"w\":" << content_rect.width()
                   << ",\"h\":" << content_rect.height()
